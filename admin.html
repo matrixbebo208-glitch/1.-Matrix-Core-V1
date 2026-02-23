@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix - لوحة تحكم الأدمن</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00ff41;
+            --bg-dark: #0a0a0a;
+            --card-bg: #161616;
+            --text-white: #ffffff;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .admin-box {
+            max-width: 800px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        h1 { text-align: center; color: var(--primary-color); margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; }
+
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary-color); }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-family: 'Cairo';
+            box-sizing: border-box;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .price-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .image-upload-area {
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .image-upload-area:hover { border-color: var(--primary-color); }
+
+        #imagePreview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid var(--primary-color);
+        }
+
+        .publish-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        .publish-btn:hover { background: #00cc33; transform: scale(1.02); }
+
+        .nav-back { text-align: center; margin-top: 20px; }
+        .nav-back a { color: var(--text-white); text-decoration: none; font-size: 14px; opacity: 0.7; }
+        .nav-back a:hover { opacity: 1; color: var(--primary-color); }
+    </style>
+</head>
+<body>
+
+<div class="admin-box">
+    <h1>Matrix Admin Panel</h1>
+    
+    <div class="form-group">
+        <label>صور المنتج (ارفق من 1 إلى 4 صور):</label>
+        <div class="image-upload-area" onclick="document.getElementById('fileInput').click()">
+            <span>اضغط هنا لرفع الصور</span>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="previewImages()">
+        </div>
+        <div id="imagePreview"></div>
+    </div>
+
+    <div class="form-group">
+        <label>اسم التجميعة / القطعة:</label>
+        <input type="text" id="pName" placeholder="مثال: تجميعة Matrix Pro - RTX 4060">
+    </div>
+
+    <div class="form-group">
+        <label>الوصف بالتفصيل:</label>
+        <textarea id="pDesc" rows="4" placeholder="اكتب مواصفات الجهاز هنا..."></textarea>
+    </div>
+
+    <div class="price-row">
+        <div class="form-group">
+            <label>السعر (EGP):</label>
+            <input type="number" id="priceEGP" placeholder="45000">
+        </div>
+        <div class="form-group">
+            <label>السعر (USD):</label>
+            <input type="number" id="priceUSD" placeholder="950">
+        </div>
+    </div>
+
+    <button class="publish-btn" onclick="saveProduct()">نشر في المتجر الآن</button>
+</div>
+
+<div class="nav-back">
+    <a href="index.html">← العودة للمتجر (واجهة المستخدم)</a>
+</div>
+
+<script>
+    // وظيفة عرض معاينة الصور
+    function previewImages() {
+        const preview = document.getElementById('imagePreview');
+        const files = document.getElementById('fileInput').files;
+        preview.innerHTML = '';
+        
+        if (files.length > 4) {
+            alert("أقصى عدد للصور هو 4 فقط");
+            document.getElementById('fileInput').value = '';
+            return;
+        }
+
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.classList.add('preview-img');
+                preview.appendChild(img);
+            }
+            reader.readAsDataURL(files[i]);
+        }
+    }
+
+    // وظيفة حفظ المنتج (مؤقتاً في LocalStorage)
+    function saveProduct() {
+        const product = {
+            name: document.getElementById('pName').value,
+            desc: document.getElementById('pDesc').value,
+            egp: document.getElementById('priceEGP').value,
+            usd: document.getElementById('priceUSD').value,
+            // سيتم التعامل مع الصور في ملف JavaScript المتكامل
+        };
+
+        if(!product.name || !product.egp) {
+            alert("من فضلك ادخل اسم المنتج والسعر على الأقل");
+            return;
+        }
+
+        alert("تم تجهيز منتج: " + product.name + " للنشر!");
+        // هنا سيتم إضافة كود الحفظ الفعلي لاحقاً
+    }
+</script>
+
+</body>
+</html>
