@@ -3,35 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix للإلكترونيات - عالم التجميعات الذكي</title>
+    <title>Matrix Electronics | المتجر المنيع</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-
-    <header>
+<body oncontextmenu="return false;"> <header>
         <div class="logo">MATRIX ELECTRONICS</div>
     </header>
 
     <div class="container">
         <h2 style="border-right: 4px solid var(--main-green); padding-right: 15px; margin-bottom: 30px;">
-            تجميعات وقطع الهاردوير المتاحة
+            قسم التجميعات الاحترافية
         </h2>
         
         <div class="products-grid" id="productsDisplay">
-            <p style="color: var(--text-gray);">جاري تحميل البيانات من نظام Matrix...</p>
+            </div>
+    </div>
+
+    <div id="adminSection">
+        <div class="admin-box">
+            <span class="close-admin" onclick="closeAdmin()">X إغلاق النظام</span>
+            <h1 style="color: var(--main-green); text-align: center;">Matrix Command Center</h1>
+            
+            <div style="border: 1px dashed #444; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label>إضافة صور (4 صور كحد أقصى):</label>
+                <input type="file" id="fileInput" multiple accept="image/*" onchange="previewImages()">
+                <div id="imagePreview" style="display: flex; gap: 10px; margin-top: 10px;"></div>
+            </div>
+
+            <input type="text" id="pName" placeholder="اسم المنتج أو التجميعة">
+            <textarea id="pDesc" rows="3" placeholder="المواصفات الفنية..."></textarea>
+            
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="priceEGP" placeholder="السعر بالجنيه (EGP)">
+                <input type="number" id="priceUSD" placeholder="السعر بالدولار (USD)">
+            </div>
+            
+            <button class="publish-btn" onclick="saveProduct()">تأكيد ونشر في Matrix</button>
+
+            <hr style="margin: 30px 0; border: 0.5px solid #222;">
+
+            <h2 style="color: #0080ff;">تلقين ذكاء Matrix AI</h2>
+            <input type="text" id="userKeyword" placeholder="الكلمة المفتاحية (مثلاً: ضمان)">
+            <textarea id="botResponse" rows="2" placeholder="الرد الذي سيقوله البوت..."></textarea>
+            <button class="publish-btn" style="background: #0080ff;" onclick="trainBot()">حفظ في الذاكرة</button>
         </div>
     </div>
 
     <div id="chat-widget">
-        <div class="chat-header">
-            <span>Matrix AI - المساعد الذكي</span>
-        </div>
+        <div class="chat-header">Matrix AI Assistant</div>
         <div id="chat-messages">
-            <div class="msg bot-msg">مرحباً بك في Matrix. أنا خبير التجميعات، اذكر لي ميزانيتك بالجنيه وسأقترح لك الأفضل!</div>
+            <div class="msg bot-msg">مرحباً بك في نظام Matrix. اذكر ميزانيتك لأقوم بتحليل أفضل تجميعة لك.</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="اكتب ميزانيتك هنا (مثلاً 30000)...">
+            <input type="text" id="userInput" placeholder="تحدث مع النظام...">
             <button id="sendBtn">إرسال</button>
         </div>
     </div>
