@@ -3,193 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix للإلكترونيات - متجر التجميعات الذكي</title>
+    <title>Matrix للإلكترونيات - عالم التجميعات الذكي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #00ff41; /* لون الماتريكس الأخضر */
-            --bg-dark: #0a0a0a;
-            --card-bg: #161616;
-            --text-white: #ffffff;
-            --text-gray: #b0b0b0;
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-white);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* الهيدر */
-        header {
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 20px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--primary-color);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* حاوية المنتجات */
-        .container {
-            padding: 40px 5%;
-        }
-
-        .section-title {
-            margin-bottom: 30px;
-            font-size: 28px;
-            border-right: 5px solid var(--primary-color);
-            padding-right: 15px;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-
-        .product-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            transition: 0.3s;
-            border: 1px solid #333;
-        }
-
-        .product-card:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-5px);
-        }
-
-        .product-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .product-info h3 { margin: 15px 0 10px; }
-        .price { color: var(--primary-color); font-weight: bold; font-size: 1.2rem; }
-        .currency { font-size: 0.9rem; color: var(--text-gray); margin-right: 5px; }
-
-        /* الشات بوت المثبت في الجنب */
-        #chat-widget {
-            position: fixed;
-            bottom: 20px;
-            left: 20px; /* جهة اليسار لأن المتجر عربي */
-            width: 350px;
-            height: 500px;
-            background: var(--card-bg);
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid var(--primary-color);
-            z-index: 9999;
-        }
-
-        .chat-header {
-            background: var(--primary-color);
-            color: black;
-            padding: 15px;
-            border-radius: 15px 15px 0 0;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        #chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .msg { padding: 10px 15px; border-radius: 8px; max-width: 80%; line-height: 1.5; }
-        .bot-msg { background: #333; align-self: flex-start; }
-        .user-msg { background: var(--primary-color); color: black; align-self: flex-end; }
-
-        .chat-input {
-            padding: 15px;
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid #333;
-        }
-
-        .chat-input input {
-            flex: 1;
-            background: #222;
-            border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            outline: none;
-        }
-
-        .chat-input button {
-            background: var(--primary-color);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* إخفاء الشات في الموبايل أو عند الرغبة */
-        .hidden { display: none !important; }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-    <div class="logo">Matrix Electronics</div>
-    <nav>
-        <a href="admin.html" style="color: var(--text-gray); text-decoration: none;">لوحة التحكم</a>
-    </nav>
-</header>
+    <header>
+        <div class="logo">MATRIX ELECTRONICS</div>
+    </header>
 
-<div class="container">
-    <h2 class="section-title">أحدث القطع والتجميعات</h2>
-    <div class="products-grid" id="productsDisplay">
-        <p style="color: var(--text-gray);">في انتظار إضافة منتجات من لوحة التحكم...</p>
+    <div class="container">
+        <h2 style="border-right: 4px solid var(--main-green); padding-right: 15px; margin-bottom: 30px;">
+            تجميعات وقطع الهاردوير المتاحة
+        </h2>
+        
+        <div class="products-grid" id="productsDisplay">
+            <p style="color: var(--text-gray);">جاري تحميل البيانات من نظام Matrix...</p>
+        </div>
     </div>
-</div>
 
-<div id="chat-widget">
-    <div class="chat-header">
-        <span>Matrix AI - مساعدك الذكي</span>
-        <span style="cursor: pointer;" onclick="document.getElementById('chat-widget').classList.toggle('hidden')">_</span>
+    <div id="chat-widget">
+        <div class="chat-header">
+            <span>Matrix AI - المساعد الذكي</span>
+        </div>
+        <div id="chat-messages">
+            <div class="msg bot-msg">مرحباً بك في Matrix. أنا خبير التجميعات، اذكر لي ميزانيتك بالجنيه وسأقترح لك الأفضل!</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="اكتب ميزانيتك هنا (مثلاً 30000)...">
+            <button id="sendBtn">إرسال</button>
+        </div>
     </div>
-    <div id="chat-messages">
-        <div class="msg bot-msg">أهلاً بك في Matrix! أنا مساعدك الذكي. قولي ميزانيتك كام ومحتاج الجهاز لأيه (ألعاب ولا شغل)؟</div>
-    </div>
-    <div class="chat-input">
-        <input type="text" id="userInput" placeholder="اكتب ميزانيتك هنا...">
-        <button onclick="sendMessage()">إرسال</button>
-    </div>
-</div>
 
-<script>
-    // ده مكان الـ JavaScript اللي هنبعته الملف الجاي
-    // حالياً الصفحة جاهزة للعرض
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
