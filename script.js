@@ -1,197 +1,164 @@
-// 1. الإعدادات والبيانات الأساسية
+// 1. تعريف البيانات الأساسية
 let products = JSON.parse(localStorage.getItem('matrix_p')) || [];
+let pendingOrders = JSON.parse(localStorage.getItem('matrix_orders')) || [];
 let cart = [];
 let currency = 'EGP';
 const WHATSAPP = "201224815487";
 const ADMIN_PASS = "01224815487";
 
-// 2. محرك مطر الماتريكس (Matrix Rain)
+// 2. محرك مطر الماتريكس (Background Animation)
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const fontSize = 16;
-const columns = canvas.width / fontSize;
-const drops = Array(Math.floor(columns)).fill(1);
+const drops = Array(Math.floor(canvas.width / 16)).fill(1);
 
 function drawMatrix() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#00ff41";
-    ctx.font = fontSize + "px Cairo";
+    ctx.font = "16px Cairo";
     drops.forEach((y, i) => {
         const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * fontSize, y * fontSize);
-        if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        ctx.fillText(text, i * 16, y * 16);
+        if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
     });
 }
 setInterval(drawMatrix, 50);
 
-// 3. عرض المنتجات والبحث (Render & Search)
-function renderStore(filterData = products) {
+// 3. وظيفة تحويل العملة (Fix)
+function toggleCurrency() {
+    currency = (currency === 'EGP') ? 'USD' : 'EGP';
+    document.getElementById('currBtn').innerText = (currency === 'EGP') ? 'عرض بـ USD $' : 'عرض بـ EGP ج.م';
+    renderStore();
+}
+
+// 4. عرض المنتجات والبحث
+function renderStore(data = products) {
     const display = document.getElementById('productsDisplay');
-    if (filterData.length === 0) {
-        display.innerHTML = `<p style="color:gray">لا توجد نتائج تطابق بحثك في نظام Matrix...</p>`;
-        return;
-    }
-    display.innerHTML = filterData.map(p => `
+    display.innerHTML = data.map(p => `
         <div class="product-card ${p.stock === 'out' ? 'sold-out' : ''}">
-            ${p.stock === 'out' ? '<span class="sold-out-tag">نفذت</span>' : ''}
+            ${p.stock === 'out' ? '<span class="sold-out-tag" style="background:red; color:white; position:absolute; top:10px; right:10px; padding:2px 10px; border-radius:5px;">نفذت</span>' : ''}
             <img src="${p.img}">
-            <h3>${p.n}</h3>
-            <div class="price">${currency === 'EGP' ? p.egp.toLocaleString() + ' ج.م' : '$' + p.usd}</div>
-            <div style="display:flex; gap:5px; margin-top:10px;">
-                <button class="btn-action btn-cart" onclick="addToCart(${p.id})" style="flex:2">🛒 أضف للسلة</button>
-                <button class="btn-action btn-compare" onclick="prepareCompare(${p.id})" style="flex:1">⚖️</button>
+            <h3 style="margin:10px 0;">${p.n}</h3>
+            <div class="price" style="color:#00ff41; font-weight:bold; font-size:1.2rem;">
+                ${currency === 'EGP' ? p.egp.toLocaleString() + ' ج.م' : '$' + p.usd}
             </div>
-            <div onclick="shareProduct(${p.id})" style="cursor:pointer; font-size:11px; color:#888; margin-top:8px;">🔗 نسخ الرابط</div>
+            <button class="btn-action btn-cart" onclick="addToCart(${p.id})">🛒 أضف للسلة</button>
         </div>
     `).join('');
 }
 
 function searchProducts() {
     const term = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = products.filter(p => p.n.toLowerCase().includes(term) || p.d.toLowerCase().includes(term));
+    const filtered = products.filter(p => p.n.toLowerCase().includes(term));
     renderStore(filtered);
 }
 
-// 4. نظام السلة (Shopping Cart)
+// 5. نظام السلة وتسجيل الطلبات (Analytics)
 function addToCart(id) {
     const item = products.find(p => p.id === id);
-    if (item.stock === 'out') return alert("هذا المنتج غير متوفر حالياً");
+    if (item.stock === 'out') return alert("المنتج غير متوفر");
     cart.push(item);
     updateCartUI();
-    logActivity(`تمت إضافة [${item.n}] للسلة`);
 }
 
 function updateCartUI() {
     document.getElementById('cartCount').innerText = cart.length;
     const list = document.getElementById('cartItemsList');
     let total = 0;
-    list.innerHTML = cart.map((item, index) => {
-        total += item.egp;
-        return `<div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
-            <span>${item.n}</span>
-            <span style="color:red; cursor:pointer" onclick="removeFromCart(${index})">حذف</span>
+    list.innerHTML = cart.map((p, i) => {
+        total += p.egp;
+        return `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #222;">
+            <span>${p.n}</span>
+            <span style="color:red; cursor:pointer" onclick="removeFromCart(${i})">حذف</span>
         </div>`;
     }).join('');
-    document.getElementById('cartTotal').innerText = total.toLocaleString() + " EGP";
+    document.getElementById('cartTotal').innerText = total.toLocaleString() + " ج.م";
 }
 
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCartUI();
-}
+function removeFromCart(i) { cart.splice(i, 1); updateCartUI(); }
 
 function checkoutWhatsApp() {
-    if (cart.length === 0) return alert("السلة فارغة!");
-    let msg = "مرحباً Matrix Electronics، أريد طلب الآتي:\n";
-    cart.forEach((item, i) => msg += `${i+1}- ${item.n} (${item.egp} ج.م)\n`);
-    const total = cart.reduce((sum, item) => sum + item.egp, 0);
-    msg += `\nالإجمالي: ${total} ج.م`;
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
-    logActivity(`طلب جديد بقيمة ${total} ج.م`);
-}
-
-// 5. المقارنة ومشاركة الروابط
-let compArray = [];
-function prepareCompare(id) {
-    const item = products.find(p => p.id === id);
-    if (compArray.length >= 2) compArray.shift();
-    compArray.push(item);
-    if (compArray.length === 2) {
-        togglePopup('comparePopup');
-        document.getElementById('compareTableContent').innerHTML = `
-            <table>
-                <tr><th>المواصفات</th><th>${compArray[0].n}</th><th>${compArray[1].n}</th></tr>
-                <tr><td>السعر</td><td>${compArray[0].egp} ج.م</td><td>${compArray[1].egp} ج.م</td></tr>
-                <tr><td>الوصف</td><td>${compArray[0].d}</td><td>${compArray[1].d}</td></tr>
-            </table>`;
-    } else { alert("اختر منتجاً آخر للمقارنة"); }
-}
-
-function shareProduct(id) {
-    const link = window.location.origin + window.location.pathname + "?id=" + id;
-    navigator.clipboard.writeText(link);
-    alert("تم نسخ الرابط المباشر للمنتج!");
-}
-
-// 6. لوحة التحكم والشات
-function sendMessage() {
-    const input = document.getElementById('userInput');
-    let txt = input.value.trim().toLowerCase();
-    if (!txt) return;
+    if (cart.length === 0) return alert("السلة فارغة");
     
-    appendChat('user', txt);
-    input.value = '';
+    // تسجيل الطلب في التحليلات
+    const order = {
+        id: Date.now(),
+        items: cart.map(p => p.n).join(', '),
+        total: cart.reduce((s, p) => s + p.egp, 0),
+        time: new Date().toLocaleString()
+    };
+    pendingOrders.push(order);
+    localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders));
 
-    if (txt === "open matrix") {
-        if (prompt("Matrix Identity Verification:") === ADMIN_PASS) {
-            togglePopup('adminSection');
-        }
-        return;
-    }
-    // تحليل ميزانية سريع
-    setTimeout(() => {
-        const budget = txt.match(/\d+/);
-        if (budget) {
-            const match = products.filter(p => p.egp <= parseInt(budget[0])).sort((a,b) => b.egp - a.egp)[0];
-            if (match) appendChat('bot', `أرشح لك تجميعة [${match.n}] بسعر ${match.egp} ج.م`);
-            else appendChat('bot', "لا توجد نتائج لميزانيتك حالياً.");
-        } else { appendChat('bot', "أنا نظام Matrix الذكي، كيف أخدمك؟"); }
-    }, 600);
+    // إرسال واتساب
+    let msg = `طلب جديد من Matrix:\n${order.items}\nالإجمالي: ${order.total} ج.م`;
+    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
+    
+    cart = []; updateCartUI();
+    renderOrdersLog();
 }
 
-// 7. وظائف الأدمن
+// 6. لوحة الإدارة والتحليلات
+function renderOrdersLog() {
+    const log = document.getElementById('ordersLog');
+    log.innerHTML = pendingOrders.reverse().map(o => `
+        <div class="order-row" style="background:#000; margin-bottom:10px; padding:10px; border-right:3px solid #00ff41;">
+            <div style="color:#00ff41">📦 طلب رقم: ${o.id}</div>
+            <div style="font-size:12px;">الأصناف: ${o.items}</div>
+            <div style="font-size:12px;">الإجمالي: ${o.total} ج.م | الوقت: ${o.time}</div>
+            <button onclick="deleteOrder(${o.id})" style="background:red; color:white; border:none; cursor:pointer; font-size:10px; margin-top:5px;">حذف السجل</button>
+        </div>
+    `).join('');
+}
+
+function deleteOrder(id) {
+    pendingOrders = pendingOrders.filter(o => o.id !== id);
+    localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders));
+    renderOrdersLog();
+}
+
+// 7. وظائف الأدمن والشات
 function saveProduct() {
     const n = document.getElementById('pName').value;
     const egp = document.getElementById('pEGP').value;
-    const files = document.getElementById('fileInput').files;
-    if (!n || !egp || !files[0]) return alert("البيانات ناقصة!");
+    const file = document.getElementById('fileInput').files[0];
+
+    if (!n || !egp || !file) return alert("أكمل البيانات");
 
     const reader = new FileReader();
     reader.onload = (e) => {
         products.push({
-            id: Date.now(), n, d: document.getElementById('pDesc').value,
-            egp: parseInt(egp), usd: document.getElementById('pUSD').value,
+            id: Date.now(), n, egp: parseInt(egp), 
+            usd: document.getElementById('pUSD').value,
+            d: document.getElementById('pDesc').value,
             img: e.target.result, stock: document.getElementById('pStock').value
         });
         localStorage.setItem('matrix_p', JSON.stringify(products));
         location.reload();
     };
-    reader.readAsDataURL(files[0]);
+    reader.readAsDataURL(file);
 }
 
-// وظائف عامة
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    let txt = input.value.trim().toLowerCase();
+    if (txt === "open matrix") {
+        if (prompt("Matrix Identity:") === ADMIN_PASS) {
+            togglePopup('adminSection');
+            renderOrdersLog();
+        }
+        input.value = '';
+    }
+}
+
 function togglePopup(id) {
     const el = document.getElementById(id);
     el.style.display = (el.style.display === 'block') ? 'none' : 'block';
 }
-function toggleCurrency() {
-    currency = (currency === 'EGP') ? 'USD' : 'EGP';
-    document.getElementById('currBtn').innerText = (currency === 'EGP') ? 'تبديل لـ $' : 'تبديل لـ ج.م';
-    renderStore();
-}
-function logActivity(msg) {
-    const log = document.getElementById('ordersLog');
-    log.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + log.innerHTML;
-}
-function appendChat(role, txt) {
-    const msgBox = document.getElementById('chat-messages');
-    msgBox.innerHTML += `<div class="msg ${role}-msg">${txt}</div>`;
-    msgBox.scrollTop = msgBox.scrollHeight;
-}
-function closeAdmin() { document.getElementById('adminSection').style.display = 'none'; }
 
-// فحص روابط المشاركة
-window.onload = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pId = urlParams.get('id');
-    if (pId) {
-        const p = products.find(x => x.id == pId);
-        if (p) alert(`عرض خاص لمنتج: ${p.n}\nالسعر: ${p.egp} ج.م`);
-    }
-    renderStore();
-};
+// التشغيل الأولي
+window.onload = renderStore;
