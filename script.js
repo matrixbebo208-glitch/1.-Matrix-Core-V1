@@ -1,103 +1,149 @@
-// مصفوفة لتخزين المنتجات (بيتم تحميلها من المتصفح)
+// مصفوفات تخزين البيانات (تحميل من الذاكرة المحلية)
 let products = JSON.parse(localStorage.getItem('matrix_products')) || [];
+let botInstructions = JSON.parse(localStorage.getItem('matrix_training')) || [];
 
-// --- الجزء الخاص بالأدمن (حفظ المنتج) ---
+// --- وظائف لوحة الأدمن ---
+
+// 1. عرض معاينة الصور عند اختيارها
+function previewImages() {
+    const preview = document.getElementById('imagePreview');
+    const files = document.getElementById('fileInput').files;
+    preview.innerHTML = '';
+    
+    Array.from(files).slice(0, 4).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '70px';
+            img.style.height = '70px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '5px';
+            img.style.border = '1px solid #00ff41';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// 2. حفظ المنتج الجديد
 function saveProduct() {
     const name = document.getElementById('pName').value;
     const desc = document.getElementById('pDesc').value;
-    const egp = parseFloat(document.getElementById('priceEGP').value);
-    const usd = parseFloat(document.getElementById('priceUSD').value);
-    const imageFiles = document.getElementById('fileInput').files;
+    const egp = document.getElementById('priceEGP').value;
+    const usd = document.getElementById('priceUSD').value;
+    const files = document.getElementById('fileInput').files;
 
-    if (!name || !egp || imageFiles.length === 0) {
-        alert("تأكد من إدخال الاسم، السعر، وصورة واحدة على الأقل.");
+    if (!name || !egp || files.length === 0) {
+        alert("برجاء إدخال الاسم والسعر وصورة واحدة على الأقل");
         return;
     }
 
-    // تحويل الصور لروابط نصية (DataURL) عشان تتحفظ في المتصفح
     const reader = new FileReader();
     reader.onload = function(e) {
         const newProduct = {
             id: Date.now(),
             name: name,
-            description: desc,
-            priceEGP: egp,
+            desc: desc,
+            priceEGP: parseInt(egp),
             priceUSD: usd,
-            image: e.target.result // الصورة الأولى كصورة أساسية
+            image: e.target.result // يحفظ الصورة الأولى كصورة أساسية
         };
 
         products.push(newProduct);
         localStorage.setItem('matrix_products', JSON.stringify(products));
-        alert("تم نشر المنتج بنجاح في Matrix!");
-        window.location.href = 'index.html'; // العودة للمتجر
+        alert("تم نشر التجميعة في Matrix بنجاح!");
+        location.reload();
     };
-    reader.readAsDataURL(imageFiles[0]); 
+    reader.readAsDataURL(files[0]);
 }
 
-// --- الجزء الخاص بالشات بوت (Matrix AI) ---
-function sendMessage() {
-    const inputField = document.getElementById('userInput');
-    const message = inputField.value.trim();
-    if (!message) return;
+// 3. تدريب البوت
+function trainBot() {
+    const key = document.getElementById('userKeyword').value.trim().toLowerCase();
+    const res = document.getElementById('botResponse').value.trim();
 
-    appendMessage('user', message);
-    inputField.value = '';
-
-    // تحليل الميزانية من نص الرسالة
-    const budgetMatch = message.match(/\d+/); // بيستخرج أول رقم من الجملة
-    
-    setTimeout(() => {
-        if (budgetMatch) {
-            const userBudget = parseInt(budgetMatch[0]);
-            findBestSetup(userBudget);
-        } else {
-            appendMessage('bot', "من فضلك قولي ميزانيتك كام بالظبط عشان أقدر أرشحلك أفضل تجميعة.");
-        }
-    }, 800);
-}
-
-function appendMessage(role, text) {
-    const chatMessages = document.getElementById('chat-messages');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `msg ${role === 'user' ? 'user-msg' : 'bot-msg'}`;
-    msgDiv.innerText = text;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-// وظيفة البحث عن تجميعة تناسب الميزانية
-function findBestSetup(budget) {
-    // فلترة المنتجات اللي سعرها أقل من أو يساوي الميزانية
-    const affordable = products.filter(p => p.priceEGP <= budget);
-
-    if (affordable.length > 0) {
-        // ترتيبهم من الأغلى للأرخص (عشان نجيب أقرب حاجة لميزانيته)
-        affordable.sort((a, b) => b.priceEGP - a.priceEGP);
-        const best = affordable[0];
-
-        appendMessage('bot', `بناءً على ميزانيتك (${budget} ج.م)، أرشح لك: ${best.name}`);
-        appendMessage('bot', `المواصفات: ${best.description} \n السعر: ${best.priceEGP} ج.م / $${best.priceUSD}`);
-    } else {
-        appendMessage('bot', "للأسف، لا يوجد تجميعة حالياً في Matrix بهذا السعر. جرب ميزانية أعلى قليلاً.");
+    if (key && res) {
+        botInstructions.push({ key, res });
+        localStorage.setItem('matrix_training', JSON.stringify(botInstructions));
+        alert("تم تحديث ذاكرة Matrix AI");
+        document.getElementById('userKeyword').value = '';
+        document.getElementById('botResponse').value = '';
     }
 }
 
-// --- الجزء الخاص بعرض المنتجات في الصفحة الرئيسية ---
+// --- وظائف المتجر والشات بوت ---
+
+// 1. عرض المنتجات في الصفحة الرئيسية
 if (document.getElementById('productsDisplay')) {
     const display = document.getElementById('productsDisplay');
     if (products.length === 0) {
-        display.innerHTML = '<p style="color: gray;">لا توجد منتجات معروضة حالياً.</p>';
+        display.innerHTML = '<p style="color: gray;">لا توجد تجميعات معروضة حالياً. ادخل للأدمن وأضف أول تجميعة!</p>';
     } else {
         display.innerHTML = products.map(p => `
             <div class="product-card">
                 <img src="${p.image}" alt="${p.name}">
                 <div class="product-info">
                     <h3>${p.name}</h3>
-                    <p>${p.description.substring(0, 100)}...</p>
-                    <div class="price">${p.priceEGP} <span class="currency">EGP</span></div>
-                    <div class="price" style="font-size: 14px; opacity: 0.7;">$${p.priceUSD}</div>
+                    <p style="font-size: 13px; color: #888;">${p.desc.substring(0, 50)}...</p>
+                    <div class="price">${p.priceEGP.toLocaleString()} <span style="font-size:12px">EGP</span></div>
+                    <div style="opacity: 0.6; font-size: 14px;">$${p.priceUSD}</div>
                 </div>
             </div>
         `).join('');
     }
+}
+
+// 2. إرسال رسالة في الشات
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim().toLowerCase();
+    if (!text) return;
+
+    appendMessage('user', text);
+    input.value = '';
+
+    setTimeout(() => {
+        // أ- البحث في التدريبات المخصصة
+        const customMatch = botInstructions.find(i => text.includes(i.key));
+        if (customMatch) {
+            appendMessage('bot', customMatch.res);
+            return;
+        }
+
+        // ب- البحث عن ميزانية (أرقام)
+        const budgetMatch = text.match(/\d+/);
+        if (budgetMatch) {
+            const budget = parseInt(budgetMatch[0]);
+            const match = products
+                .filter(p => p.priceEGP <= budget)
+                .sort((a, b) => b.priceEGP - a.priceEGP)[0];
+
+            if (match) {
+                appendMessage('bot', `بناءً على ميزانيتك، أرشح لك تجميعة: ${match.name}`);
+                appendMessage('bot', `السعر: ${match.priceEGP} ج.م. المواصفات: ${match.desc}`);
+            } else {
+                appendMessage('bot', "للأسف لا توجد تجميعات بهذا السعر حالياً، جرب زيادة الميزانية قليلاً.");
+            }
+        } else {
+            appendMessage('bot', "أنا هنا لمساعدتك! قولي ميزانيتك كام أو اسأل عن (الضمان، الشحن، أو مكان المحل).");
+        }
+    }, 700);
+}
+
+function appendMessage(role, text) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role === 'user' ? 'user-msg' : 'bot-msg'}`;
+    div.innerText = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+// تشغيل الإرسال عند الضغط على Enter
+if (document.getElementById('userInput')) {
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
 }
