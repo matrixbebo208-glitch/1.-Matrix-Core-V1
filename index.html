@@ -3,76 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Electronics | Control Center</title>
+    <title>Matrix Electronics | الإصدار الاحترافي 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" onkeydown="if(event.keyCode==123) return false;">
 
     <canvas id="matrix-canvas"></canvas>
 
     <div id="cart-icon" onclick="togglePopup('cartPopup')">🛒 السلة (<span id="cartCount">0</span>)</div>
-    <div class="currency-btn" id="currBtn" onclick="toggleCurrency()">عرض بـ USD $</div>
+    <div class="currency-btn" id="currBtn" onclick="toggleCurrency()" style="position:fixed; bottom:100px; right:25px; background:black; color:var(--main-green); padding:10px; border-radius:50px; border:1px solid var(--main-green); cursor:pointer; z-index:1001;">USD $</div>
 
     <header>
         <div class="logo">MATRIX ELECTRONICS</div>
+        
+        <div class="theme-switcher">
+            <button class="theme-btn" onclick="changeTheme('matrix')" style="border-color: var(--main-green);">Matrix 🟢</button>
+            <button class="theme-btn" onclick="changeTheme('gold')" style="border-color: var(--gold);">Gold 🟡</button>
+            <button class="theme-btn" onclick="changeTheme('stream')" style="border-color: var(--stream-cyan);">Streaming 🔵</button>
+        </div>
+
         <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="ابحث عن تجميعة أو قطعة معينة..." oninput="searchProducts()">
+            <input type="text" id="searchInput" placeholder="ابحث عن التجميعة أو القطعة..." oninput="searchProducts()">
         </div>
     </header>
 
     <div class="container">
-        <div class="products-grid" id="productsDisplay">
-            </div>
+        <div class="products-grid" id="productsDisplay"></div>
     </div>
 
     <div id="cartPopup" class="overlay">
         <div class="popup-content">
-            <span style="color:red; cursor:pointer; float:left;" onclick="togglePopup('cartPopup')">إغلاق [X]</span>
-            <h2 style="color:var(--main-green)">سلة المشتريات</h2>
+            <span class="close-btn" onclick="togglePopup('cartPopup')" style="cursor:pointer; color:red; font-weight:bold;">✖ إغلاق</span>
+            <h2 style="color:var(--main-green); text-align:center;">مراجعة طلبك</h2>
             <div id="cartItemsList"></div>
-            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px;">
-                <strong>الإجمالي: </strong><span id="cartTotal" style="color:var(--main-green)">0</span>
+
+            <div class="promo-section">
+                <input type="text" id="promoInput" placeholder="أدخل كود الخصم (مثل Matrix10)">
+                <button onclick="applyPromoCode()">تطبيق الخصم</button>
             </div>
-            <button class="btn-action btn-buy" onclick="checkoutWhatsApp()">إرسال الطلب للواتساب وتسجيله</button>
+
+            <div style="background:#000; padding:15px; border-radius:10px; margin-top:10px;">
+                <input type="text" id="custAddress" placeholder="عنوان التوصيل بالتفصيل..." style="width:100%; padding:10px; margin-bottom:10px; background:#111; color:white; border:1px solid #333;">
+                <select id="payMethod" style="width:100%; padding:10px; background:#111; color:white; border:1px solid #333;">
+                    <option value="كاش عند الاستلام">كاش عند الاستلام</option>
+                    <option value="فودافون كاش">فودافون كاش</option>
+                    <option value="إنستا باي">InstaPay</option>
+                </select>
+            </div>
+
+            <h3 style="text-align:center;">الإجمالي النهائي: <span id="cartTotal" style="color:var(--main-green)">0</span></h3>
+            <button class="btn-action btn-buy" onclick="checkoutWhatsApp()">إتمام الطلب عبر واتساب 🚀</button>
         </div>
     </div>
 
     <div id="adminSection" class="overlay">
-        <div class="popup-content" style="max-width:800px;">
-            <span style="color:red; cursor:pointer; float:left;" onclick="togglePopup('adminSection')">خروج من النظام [X]</span>
-            <h1 style="color:var(--main-green); text-align:center;">إدارة إمبراطورية Matrix</h1>
+        <div class="popup-content">
+            <span class="close-btn" onclick="togglePopup('adminSection')" style="cursor:pointer; color:red;">✖ خروج آمن</span>
+            <h1 style="color:var(--main-green); text-align:center;">نظام إدارة Matrix</h1>
             
-            <div style="background:#111; padding:15px; border-radius:10px; margin-bottom:25px;">
-                <h3>➕ إضافة منتج جديد</h3>
-                <input type="file" id="fileInput" accept="image/*">
-                <input type="text" id="pName" placeholder="اسم المنتج">
-                <textarea id="pDesc" placeholder="المواصفات الفنية"></textarea>
-                <div style="display:flex; gap:10px;">
-                    <input type="number" id="pEGP" placeholder="السعر بالجنيه">
-                    <input type="number" id="pUSD" placeholder="السعر بالدولار">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="admin-card">
+                    <h3>➕ إضافة منتج جديد</h3>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="color:white;">
+                    <input type="text" id="pName" placeholder="اسم المنتج">
+                    <textarea id="pDesc" placeholder="المواصفات الفنية..."></textarea>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="pEGP" placeholder="السعر EGP">
+                        <input type="number" id="pUSD" placeholder="السعر USD">
+                    </div>
+                    <button class="btn-action btn-cart" onclick="saveProduct()">نشر في المتجر</button>
                 </div>
-                <select id="pStock" style="width:100%; padding:10px; background:#000; color:white; border:1px solid #333; margin:10px 0;">
-                    <option value="in">متوفر</option>
-                    <option value="out">نفذت الكمية</option>
-                </select>
-                <button class="btn-action btn-cart" onclick="saveProduct()">حفظ ونشر في المتجر</button>
+
+                <div class="admin-card">
+                    <h3 style="color:#ff3333;">🗑️ المنتجات المعروضة (حذف)</h3>
+                    <div id="adminProductsList" style="max-height:250px; overflow-y:auto; background:#000; padding:10px; border-radius:5px;">
+                        </div>
+                </div>
+
+                <div class="admin-card" style="text-align:center;">
+                    <h3 style="color:var(--gold);">📱 باركود المتجر</h3>
+                    <div id="qrcode" style="background:white; padding:10px; display:inline-block; border-radius:10px;"></div>
+                    <p style="font-size:12px; margin-top:10px; color:gray;">انسخ الباركود واطبعه للعملاء للوصول السريع.</p>
+                </div>
             </div>
 
-            <div style="background:#111; padding:15px; border-radius:10px;">
-                <h3 style="color:var(--order-gold)">📊 سجل الطلبات والتحليلات (معلقة/مكتملة)</h3>
-                <div id="ordersLog">
-                    </div>
+            <div class="admin-card" style="margin-top:20px;">
+                <h3>📊 سجل الطلبات والتحليلات</h3>
+                <div id="ordersLog"></div>
             </div>
         </div>
     </div>
 
-    <div id="chat-widget">
-        <div class="chat-header" style="background:var(--main-green); color:black; padding:10px; font-weight:bold;">Matrix AI</div>
-        <div id="chat-messages"></div>
-        <div class="chat-input">
-            <input type="text" id="userInput" placeholder="تحدث مع Matrix...">
-            <button onclick="sendMessage()" style="background:var(--main-green); border:none; padding:0 10px; cursor:pointer;">ارسل</button>
+    <div id="chat-widget" onclick="openChat(event)">
+        <div class="chat-icon-trigger" style="font-size:30px;">🤖</div>
+
+        <div class="chat-content-wrapper">
+            <div class="chat-header">
+                Matrix AI Support 🟢
+                <span onclick="closeChat(event)" style="float:left; cursor:pointer;">✖</span>
+            </div>
+            <div id="chat-messages" style="flex:1; overflow-y:auto; padding:10px;"></div>
+            <div class="chat-input" style="display:flex; border-top:1px solid #333;">
+                <input type="text" id="userInput" placeholder="اسألني أي شيء أو اكتب الباسورد..." style="flex:1; background:none; border:none; color:white; padding:10px; outline:none;">
+                <button onclick="sendMessage()" style="background:var(--main-green); border:none; padding:10px; cursor:pointer; font-weight:bold;">ارسل</button>
+            </div>
         </div>
     </div>
 
