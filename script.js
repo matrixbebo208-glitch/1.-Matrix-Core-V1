@@ -1,113 +1,199 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Electronics | الإصدار الآمن</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body oncontextmenu="return false;" onkeydown="if(event.keyCode==123) return false;">
+// 1. البيانات والتحميل
+let products = JSON.parse(localStorage.getItem('matrix_p')) || [];
+let pendingOrders = JSON.parse(localStorage.getItem('matrix_orders')) || [];
+let botBrain = JSON.parse(localStorage.getItem('matrix_bot_brain')) || {
+    "مرحبا": "أهلاً بك في Matrix Electronics! كيف يمكنني مساعدتك في عالم الهاردوير اليوم؟",
+    "اسعار": "يمكنك رؤية الأسعار مباشرة في المتجر، كما يمكنك التحويل بين الجنيه والدولار من الزر الطائر."
+};
+let cart = [];
+let currency = 'EGP';
+let discount = 0;
+const WHATSAPP = "201224815487";
+const ADMIN_PASS = "01224815487";
 
-    <canvas id="matrix-canvas"></canvas>
+// 2. مطر الماتريكس (Background Animation)
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const drops = Array(Math.floor(canvas.width / 16)).fill(1);
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00ff41"; ctx.font = "16px Cairo";
+    drops.forEach((y, i) => {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(text, i * 16, y * 16);
+        if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+    });
+}
+setInterval(drawMatrix, 50);
 
-    <div id="cart-icon" onclick="togglePopup('cartPopup')">🛒 السلة (<span id="cartCount">0</span>)</div>
-    <div class="currency-btn" id="currBtn" onclick="toggleCurrency()">عرض بـ USD $</div>
-
-    <header>
-        <div class="logo">MATRIX ELECTRONICS</div>
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="ابحث في قاعدة بيانات الماتريكس..." oninput="searchProducts()">
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="products-grid" id="productsDisplay"></div>
-    </div>
-
-    <div id="cartPopup" class="overlay">
-        <div class="popup-content">
-            <span class="close-btn" onclick="togglePopup('cartPopup')">✖ إغلاق</span>
-            <h2 style="color:var(--main-green)">فاتورة الشراء</h2>
-            
-            <div id="cartItemsList"></div>
-            
-            <div style="background:#111; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #222;">
-                <h4 style="margin-top:0;">بيانات التوصيل والدفع:</h4>
-                <input type="text" id="custAddress" placeholder="عنوانك بالتفصيل (محافظة/مدينة/شارع)..." style="width:100%; margin-bottom:10px; height:45px; padding:10px; background:#000; border:1px solid #333; color:white;">
-                
-                <select id="payMethod" style="width:100%; height:45px; background:#000; color:white; border:1px solid #333; margin-bottom:10px;">
-                    <option value="كاش عند الاستلام">كاش عند الاستلام</option>
-                    <option value="فودافون كاش (محفظة)">فودافون كاش (محفظة)</option>
-                    <option value="تحويل بنكي">تحويل بنكي مباشر</option>
-                </select>
-
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="promoInput" placeholder="كود الخصم" style="flex:1; background:#000; border:1px solid #333; color:white; padding:10px;">
-                    <button onclick="applyPromoCode()" style="background:var(--main-green); border:none; padding:0 15px; cursor:pointer; font-weight:bold; border-radius:5px;">تطبيق</button>
-                </div>
+// 3. عرض المنتجات والتحويلات
+function renderStore(data = products) {
+    const display = document.getElementById('productsDisplay');
+    display.innerHTML = data.map(p => `
+        <div class="product-card">
+            <img src="${Array.isArray(p.img) ? p.img[0] : p.img}" id="main-img-${p.id}">
+            <h3>${p.n}</h3>
+            <div class="price" style="color:#00ff41; font-weight:bold;">
+                ${currency === 'EGP' ? p.egp.toLocaleString() + ' ج.م' : '$' + p.usd}
             </div>
-
-            <div style="margin-top:15px; font-size:1.2rem;">
-                الإجمالي النهائي: <span id="cartTotal" style="color:var(--main-green)">0</span>
+            <button class="btn-action btn-cart" onclick="addToCart(${p.id})">🛒 أضف للسلة</button>
+            <div style="display:flex; gap:5px; margin-top:8px;">
+                <button onclick="showDetails(${p.id})" class="btn-mini">📄 مواصفات</button>
+                <button onclick="shareProduct(${p.id})" class="btn-mini">🔗 مشاركة</button>
             </div>
-            
-            <button class="btn-action btn-buy" onclick="checkoutWhatsApp()" style="height:60px; font-size:1.3rem;">تأكيد الطلب عبر واتساب 🚀</button>
         </div>
-    </div>
+    `).join('');
+}
 
-    <div id="adminSection" class="overlay">
-        <div class="popup-content" style="max-width:1000px;">
-            <span class="close-btn" onclick="togglePopup('adminSection')">✖ خروج آمن</span>
-            <h1 style="color:var(--main-green); text-align:center; border-bottom:1px solid #333; padding-bottom:10px;">MATRIX COMMAND CENTER</h1>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
-                
-                <div class="admin-card">
-                    <h3 style="color:var(--main-green)">➕ إضافة منتج جديد</h3>
-                    <input type="file" id="fileInput" multiple accept="image/*">
-                    <input type="text" id="pName" placeholder="اسم المنتج/التجميعة">
-                    <textarea id="pDesc" placeholder="المواصفات الفنية كاملة..."></textarea>
-                    <div style="display:flex; gap:10px;">
-                        <input type="number" id="pEGP" placeholder="EGP">
-                        <input type="number" id="pUSD" placeholder="USD">
-                    </div>
-                    <select id="pStock">
-                        <option value="in">متوفر في المخزن</option>
-                        <option value="out">نفذت الكمية</option>
-                    </select>
-                    <button class="btn-action btn-cart" onclick="saveProduct()">نشر المنتج في المتجر</button>
-                </div>
+function toggleCurrency() {
+    currency = (currency === 'EGP') ? 'USD' : 'EGP';
+    document.getElementById('currBtn').innerText = (currency === 'EGP') ? 'عرض بـ USD $' : 'عرض بـ EGP ج.م';
+    renderStore();
+}
 
-                <div class="admin-card">
-                    <h3 style="color:#0080ff">🤖 تدريب Matrix AI</h3>
-                    <p style="font-size:11px; color:gray;">علم البوت كيف يرد على الكلمات المفتاحية.</p>
-                    <button class="btn-action" style="background:#0080ff; color:white;" onclick="trainBot()">إضافة رد ذكي جديد</button>
-                    
-                    <h3 style="margin-top:25px; color:#ff3333;">🗑️ إدارة وحذف المحتوى</h3>
-                    <div id="adminProductsList" style="max-height:250px; overflow-y:auto; border:1px solid #222; padding:5px; border-radius:5px;">
-                        </div>
-                </div>
-            </div>
+// 4. نظام السلة والخصومات
+function addToCart(id) {
+    const item = products.find(p => p.id === id);
+    if (item.stock === 'out') return alert("للأسف نفذت الكمية!");
+    cart.push(item);
+    updateCartUI();
+}
 
-            <div class="admin-card" style="margin-top:25px;">
-                <h3 style="color:var(--order-gold)">📊 سجل الطلبات والتحليلات المعلقة</h3>
-                <div id="ordersLog"></div>
-            </div>
-            
-            <button onclick="formatSystem()" style="width:100%; margin-top:20px; background:none; border:1px solid #333; color:#444; cursor:pointer; padding:10px;">تصفير بيانات النظام بالكامل</button>
-        </div>
-    </div>
+function updateCartUI() {
+    document.getElementById('cartCount').innerText = cart.length;
+    const list = document.getElementById('cartItemsList');
+    let subTotal = cart.reduce((s, p) => s + p.egp, 0);
+    let finalTotal = subTotal - (subTotal * discount);
+    
+    list.innerHTML = cart.map((p, i) => `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #222;">
+        <span>${p.n}</span> <span onclick="removeFromCart(${i})" style="color:red; cursor:pointer;">❌</span>
+    </div>`).join('');
+    
+    document.getElementById('cartTotal').innerText = finalTotal.toLocaleString() + " ج.م" + (discount > 0 ? " (خصم مفعّل)" : "");
+}
 
-    <div id="chat-widget">
-        <div class="chat-header">Matrix AI Support</div>
-        <div id="chat-messages"></div>
-        <div class="chat-input">
-            <input type="text" id="userInput" placeholder="اكتب 'open matrix' للإدارة...">
-            <button onclick="sendMessage()">ارسل</button>
-        </div>
-    </div>
+function applyPromoCode() {
+    const code = document.getElementById('promoInput').value;
+    if (code === "Matrix10") {
+        discount = 0.10; alert("تم تطبيق خصم 10%!"); updateCartUI();
+    } else { alert("كود غير صحيح"); }
+}
 
-    <script src="script.js"></script>
-</body>
-</html>
+// 5. الطلب والفاتورة (WhatsApp Integration)
+function checkoutWhatsApp() {
+    const addr = document.getElementById('custAddress').value;
+    const pay = document.getElementById('payMethod').value;
+    if (!addr) return alert("العنوان مطلوب!");
+
+    let subTotal = cart.reduce((s, p) => s + p.egp, 0);
+    let finalTotal = subTotal - (subTotal * discount);
+    
+    let msg = `*فاتورة طلب Matrix Electronics*\n------------------\n`;
+    cart.forEach((p, i) => msg += `${i+1}- ${p.n} (${window.location.origin}?id=${p.id})\n`);
+    msg += `------------------\n📍 العنوان: ${addr}\n💳 الدفع: ${pay}\n💰 الإجمالي: ${finalTotal} ج.م`;
+
+    const orderRecord = { id: Date.now(), items: cart.map(p=>p.n).join(', '), total: finalTotal, address: addr, pay, time: new Date().toLocaleString() };
+    pendingOrders.push(orderRecord);
+    localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders));
+
+    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
+    downloadInvoice(orderRecord);
+    cart = []; updateCartUI(); togglePopup('cartPopup'); renderOrdersLog();
+}
+
+function downloadInvoice(o) {
+    const content = `Matrix Electronics\nOrder ID: ${o.id}\nItems: ${o.items}\nTotal: ${o.total} EGP\nAddress: ${o.address}\nTime: ${o.time}`;
+    const blob = new Blob([content], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `Invoice_${o.id}.txt`; a.click();
+}
+
+// 6. ذكاء البوت والبحث
+function sendMessage() {
+    const input = document.getElementById('userInput');
+    let txt = input.value.trim().toLowerCase();
+    if (!txt) return;
+    appendChat('user', txt); input.value = '';
+
+    if (txt === "open matrix") {
+        if (prompt("Matrix Identity Verification:") === ADMIN_PASS) {
+            togglePopup('adminSection'); renderAdminList(); renderOrdersLog();
+        }
+        return;
+    }
+
+    setTimeout(() => {
+        let res = "عذراً، لم أفهم طلبك. جرب سؤالاً آخر عن التجميعات أو الأسعار.";
+        for (let key in botBrain) if (txt.includes(key)) res = botBrain[key];
+        products.forEach(p => { if (txt.includes(p.n.toLowerCase())) res = `المنتج ${p.n} متاح وسعره ${p.egp} ج.م.`; });
+        appendChat('bot', res);
+    }, 600);
+}
+
+function appendChat(role, txt) {
+    const box = document.getElementById('chat-messages');
+    box.innerHTML += `<div class="msg ${role}-msg">${txt}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+// 7. إدارة الأدمن (حذف وإضافة)
+function saveProduct() {
+    const n = document.getElementById('pName').value;
+    const egp = document.getElementById('pEGP').value;
+    const files = document.getElementById('fileInput').files;
+    if (!n || !egp || files.length === 0) return alert("البيانات ناقصة!");
+
+    let images = []; let done = 0;
+    for (let i = 0; i < files.length; i++) {
+        const r = new FileReader();
+        r.onload = (e) => {
+            images.push(e.target.result); done++;
+            if (done === files.length) {
+                products.push({ id: Date.now(), n, egp: parseInt(egp), usd: document.getElementById('pUSD').value, d: document.getElementById('pDesc').value, img: images, stock: document.getElementById('pStock').value });
+                localStorage.setItem('matrix_p', JSON.stringify(products)); location.reload();
+            }
+        };
+        r.readAsDataURL(files[i]);
+    }
+}
+
+function renderAdminList() {
+    document.getElementById('adminProductsList').innerHTML = products.map(p => `
+        <div style="display:flex; justify-content:space-between; background:#000; padding:10px; margin-bottom:5px; border-radius:5px;">
+            <span>${p.n}</span> <button onclick="deleteProduct(${p.id})" style="color:red; background:none; border:none; cursor:pointer;">حذف</button>
+        </div>`).join('');
+}
+
+function deleteProduct(id) {
+    if (confirm("حذف نهائي؟")) { products = products.filter(p => p.id !== id); localStorage.setItem('matrix_p', JSON.stringify(products)); location.reload(); }
+}
+
+function renderOrdersLog() {
+    document.getElementById('ordersLog').innerHTML = pendingOrders.slice().reverse().map(o => `
+        <div style="background:#000; padding:15px; border-right:4px solid #00ff41; margin-bottom:10px; border-radius:10px;">
+            <div>📦 طلب: ${o.id}</div>
+            <div style="font-size:12px; color:gray;">${o.items}</div>
+            <div style="font-size:12px; color:#00ff41;">الإجمالي: ${o.total} ج.م | ${o.time}</div>
+            <button onclick="deleteOrder(${o.id})" style="background:red; color:white; border:none; margin-top:5px; padding:2px 8px; cursor:pointer;">حذف السجل</button>
+        </div>`).join('');
+}
+
+function deleteOrder(id) {
+    pendingOrders = pendingOrders.filter(o => o.id !== id); localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders)); renderOrdersLog();
+}
+
+function trainBot() {
+    const k = prompt("الكلمة:"); const v = prompt("الرد:");
+    if (k && v) { botBrain[k.toLowerCase()] = v; localStorage.setItem('matrix_bot_brain', JSON.stringify(botBrain)); alert("تم التعليم!"); }
+}
+
+function togglePopup(id) { const el = document.getElementById(id); el.style.display = (el.style.display === 'block') ? 'none' : 'block'; }
+function removeFromCart(i) { cart.splice(i, 1); updateCartUI(); }
+function formatSystem() { if(confirm("مسح كل شيء؟")) { localStorage.clear(); location.reload(); } }
+function shareProduct(id) { const link = `${window.location.origin}${window.location.pathname}?id=${id}`; navigator.clipboard.writeText(link); alert("تم نسخ رابط المنتج!"); }
+function showDetails(id) { const p = products.find(i => i.id === id); alert(`مواصفات ${p.n}:\n\n${p.d}`); }
+
+window.onload = renderStore;
