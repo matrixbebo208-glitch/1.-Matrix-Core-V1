@@ -1,13 +1,15 @@
-/* Matrix Electronics - Ultimate Admin Edition */
+/* Matrix Electronics - The Fortress Edition 2026 */
 :root {
     --main-green: #00ff41;
-    --bg-dark: #0a0a0a;
-    --card-bg: #161616;
-    --text-white: #ffffff;
-    --text-gray: #b0b0b0;
+    --dark-green: #008f11;
+    --bg-dark: #050505;
+    --card-bg: #121212;
+    --text-white: #e0e0e0;
     --error-red: #ff3333;
     --order-gold: #ffcc00;
 }
+
+* { box-sizing: border-box; transition: all 0.2s ease-in-out; }
 
 body {
     font-family: 'Cairo', sans-serif;
@@ -17,100 +19,114 @@ body {
     direction: rtl; overflow-x: hidden;
 }
 
-/* خلفية الماتريكس */
+/* 1. Matrix Background */
 #matrix-canvas {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
-    z-index: -1; opacity: 0.15;
+    z-index: -1; opacity: 0.12;
 }
 
-/* الهيدر */
+/* 2. Header & Search */
 header {
     background: rgba(0, 0, 0, 0.95);
-    padding: 15px 5%;
+    padding: 20px 5%;
     display: flex; flex-direction: column; align-items: center;
     border-bottom: 2px solid var(--main-green);
     position: sticky; top: 0; z-index: 1000;
 }
 
-.search-bar {
-    width: 100%; max-width: 500px;
-    margin-top: 12px; display: flex; gap: 5px;
+.logo {
+    font-size: 24px; font-weight: bold; color: var(--main-green);
+    text-shadow: 0 0 10px var(--main-green); letter-spacing: 2px;
 }
 
+.search-bar { width: 100%; max-width: 600px; margin-top: 15px; display: flex; gap: 10px; }
 .search-bar input {
     flex: 1; background: #000; border: 1px solid #333;
-    color: var(--main-green); padding: 10px; border-radius: 5px; outline: none;
+    color: var(--main-green); padding: 12px; border-radius: 8px; outline: none;
 }
 
-/* شبكة المنتجات */
-.container { padding: 30px 5%; }
+/* 3. Product Grid & Cards */
+.container { padding: 40px 5%; }
 .products-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;
 }
 
 .product-card {
-    background: var(--card-bg); border-radius: 12px; padding: 15px;
-    border: 1px solid #333; transition: 0.3s; position: relative;
-    text-align: center;
+    background: var(--card-bg); border-radius: 15px; padding: 20px;
+    border: 1px solid #222; position: relative; text-align: center;
 }
+.product-card:hover { border-color: var(--main-green); box-shadow: 0 0 15px rgba(0,255,65,0.2); }
+.product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; }
 
-.product-card:hover { border-color: var(--main-green); transform: translateY(-5px); }
-.product-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+/* 4. Multi-Image Slider Styling */
+.img-dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+.img-dots span { width: 8px; height: 8px; background: #444; border-radius: 50%; cursor: pointer; }
+.img-dots span.active { background: var(--main-green); }
 
-/* أزرار العملة والسلة */
+/* 5. Floating UI Elements */
 #cart-icon {
-    position: fixed; top: 20px; right: 20px;
+    position: fixed; top: 25px; right: 25px;
     background: var(--main-green); color: black;
-    padding: 10px 15px; border-radius: 50px;
+    padding: 12px 20px; border-radius: 50px;
     font-weight: bold; cursor: pointer; z-index: 1001;
+    box-shadow: 0 0 15px var(--main-green);
 }
 
 .currency-btn {
-    position: fixed; bottom: 85px; right: 20px;
-    background: #111; border: 1px solid var(--main-green);
-    color: var(--main-green); padding: 10px 15px; 
-    border-radius: 50px; cursor: pointer; z-index: 1001;
-    font-weight: bold; transition: 0.3s;
+    position: fixed; bottom: 90px; right: 25px;
+    background: #000; border: 1px solid var(--main-green);
+    color: var(--main-green); padding: 12px; 
+    border-radius: 50px; cursor: pointer; z-index: 1001; font-weight: bold;
 }
 
-/* اللوحات المنبثقة (Overlays) */
+/* 6. Admin Panel & Overlays */
 .overlay {
     display: none; position: fixed; top: 0; left: 0;
     width: 100%; height: 100%; background: rgba(0,0,0,0.98);
-    z-index: 9999; padding: 20px; box-sizing: border-box;
-    overflow-y: auto;
+    z-index: 9999; padding: 20px; overflow-y: auto;
 }
 
 .popup-content {
-    background: var(--card-bg); border: 1px solid var(--main-green);
-    max-width: 700px; margin: 20px auto; padding: 25px; border-radius: 15px;
+    background: #0d0d0d; border: 1px solid var(--main-green);
+    max-width: 900px; margin: 30px auto; padding: 30px; border-radius: 20px;
 }
 
-/* جدول الطلبات في لوحة الإدارة */
-.order-row {
-    background: #000; border: 1px solid #222;
-    padding: 15px; border-radius: 8px; margin-bottom: 10px;
+.admin-card {
+    background: #151515; padding: 20px; border-radius: 12px;
+    border: 1px solid #222; margin-bottom: 15px;
 }
 
-/* أزرار الأكشن */
+.admin-card input, .admin-card textarea, .admin-card select {
+    width: 100%; margin-bottom: 12px; background: #000;
+    border: 1px solid #333; color: white; padding: 12px; border-radius: 5px;
+}
+
+/* 7. Buttons */
 .btn-action {
-    width: 100%; padding: 12px; margin-top: 10px;
-    border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
+    width: 100%; padding: 15px; border: none; border-radius: 8px;
+    cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;
 }
 .btn-buy { background: #25D366; color: white; }
 .btn-cart { background: var(--main-green); color: black; }
+.btn-mini { background: #333; color: white; padding: 8px; font-size: 12px; flex: 1; border-radius: 5px; cursor: pointer; border: none;}
 
-/* الشات بوت */
+/* 8. Chatbot Widget */
 #chat-widget {
-    position: fixed; bottom: 20px; left: 20px;
-    width: 300px; background: var(--card-bg);
-    border: 1px solid var(--main-green); border-radius: 10px;
-    z-index: 1001; display: flex; flex-direction: column;
+    position: fixed; bottom: 25px; left: 25px;
+    width: 320px; background: var(--card-bg);
+    border: 1px solid var(--main-green); border-radius: 15px;
+    z-index: 1001; display: flex; flex-direction: column; overflow: hidden;
 }
-#chat-messages { height: 250px; overflow-y: auto; padding: 10px; font-size: 13px; }
-.msg { margin-bottom: 8px; padding: 8px; border-radius: 5px; }
-.user-msg { background: var(--main-green); color: black; align-self: flex-end; }
-.bot-msg { background: #222; border-right: 3px solid var(--main-green); }
-.chat-input { display: flex; padding: 5px; border-top: 1px solid #333; }
-.chat-input input { flex: 1; background: #111; border: none; color: white; padding: 8px; }
+
+.chat-header { background: var(--main-green); color: black; padding: 12px; font-weight: bold; text-align: center; }
+#chat-messages { height: 280px; overflow-y: auto; padding: 15px; }
+.msg { margin-bottom: 12px; padding: 10px; border-radius: 8px; line-height: 1.5; font-size: 14px;}
+.user-msg { background: var(--main-green); color: black; align-self: flex-end; margin-left: 20%; }
+.bot-msg { background: #222; border-right: 3px solid var(--main-green); margin-right: 20%; }
+
+.chat-input { display: flex; border-top: 1px solid #333; background: #000; }
+.chat-input input { flex: 1; background: none; border: none; color: white; padding: 12px; outline: none; }
+.chat-input button { background: var(--main-green); border: none; padding: 0 15px; cursor: pointer; font-weight: bold; }
+
+.close-btn { color: var(--error-red); cursor: pointer; float: left; font-weight: bold; }
