@@ -1,164 +1,113 @@
-// 1. تعريف البيانات الأساسية
-let products = JSON.parse(localStorage.getItem('matrix_p')) || [];
-let pendingOrders = JSON.parse(localStorage.getItem('matrix_orders')) || [];
-let cart = [];
-let currency = 'EGP';
-const WHATSAPP = "201224815487";
-const ADMIN_PASS = "01224815487";
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Electronics | الإصدار الآمن</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body oncontextmenu="return false;" onkeydown="if(event.keyCode==123) return false;">
 
-// 2. محرك مطر الماتريكس (Background Animation)
-const canvas = document.getElementById('matrix-canvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const drops = Array(Math.floor(canvas.width / 16)).fill(1);
+    <canvas id="matrix-canvas"></canvas>
 
-function drawMatrix() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#00ff41";
-    ctx.font = "16px Cairo";
-    drops.forEach((y, i) => {
-        const text = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(text, i * 16, y * 16);
-        if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-    });
-}
-setInterval(drawMatrix, 50);
+    <div id="cart-icon" onclick="togglePopup('cartPopup')">🛒 السلة (<span id="cartCount">0</span>)</div>
+    <div class="currency-btn" id="currBtn" onclick="toggleCurrency()">عرض بـ USD $</div>
 
-// 3. وظيفة تحويل العملة (Fix)
-function toggleCurrency() {
-    currency = (currency === 'EGP') ? 'USD' : 'EGP';
-    document.getElementById('currBtn').innerText = (currency === 'EGP') ? 'عرض بـ USD $' : 'عرض بـ EGP ج.م';
-    renderStore();
-}
+    <header>
+        <div class="logo">MATRIX ELECTRONICS</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="ابحث في قاعدة بيانات الماتريكس..." oninput="searchProducts()">
+        </div>
+    </header>
 
-// 4. عرض المنتجات والبحث
-function renderStore(data = products) {
-    const display = document.getElementById('productsDisplay');
-    display.innerHTML = data.map(p => `
-        <div class="product-card ${p.stock === 'out' ? 'sold-out' : ''}">
-            ${p.stock === 'out' ? '<span class="sold-out-tag" style="background:red; color:white; position:absolute; top:10px; right:10px; padding:2px 10px; border-radius:5px;">نفذت</span>' : ''}
-            <img src="${p.img}">
-            <h3 style="margin:10px 0;">${p.n}</h3>
-            <div class="price" style="color:#00ff41; font-weight:bold; font-size:1.2rem;">
-                ${currency === 'EGP' ? p.egp.toLocaleString() + ' ج.م' : '$' + p.usd}
+    <div class="container">
+        <div class="products-grid" id="productsDisplay"></div>
+    </div>
+
+    <div id="cartPopup" class="overlay">
+        <div class="popup-content">
+            <span class="close-btn" onclick="togglePopup('cartPopup')">✖ إغلاق</span>
+            <h2 style="color:var(--main-green)">فاتورة الشراء</h2>
+            
+            <div id="cartItemsList"></div>
+            
+            <div style="background:#111; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #222;">
+                <h4 style="margin-top:0;">بيانات التوصيل والدفع:</h4>
+                <input type="text" id="custAddress" placeholder="عنوانك بالتفصيل (محافظة/مدينة/شارع)..." style="width:100%; margin-bottom:10px; height:45px; padding:10px; background:#000; border:1px solid #333; color:white;">
+                
+                <select id="payMethod" style="width:100%; height:45px; background:#000; color:white; border:1px solid #333; margin-bottom:10px;">
+                    <option value="كاش عند الاستلام">كاش عند الاستلام</option>
+                    <option value="فودافون كاش (محفظة)">فودافون كاش (محفظة)</option>
+                    <option value="تحويل بنكي">تحويل بنكي مباشر</option>
+                </select>
+
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="promoInput" placeholder="كود الخصم" style="flex:1; background:#000; border:1px solid #333; color:white; padding:10px;">
+                    <button onclick="applyPromoCode()" style="background:var(--main-green); border:none; padding:0 15px; cursor:pointer; font-weight:bold; border-radius:5px;">تطبيق</button>
+                </div>
             </div>
-            <button class="btn-action btn-cart" onclick="addToCart(${p.id})">🛒 أضف للسلة</button>
+
+            <div style="margin-top:15px; font-size:1.2rem;">
+                الإجمالي النهائي: <span id="cartTotal" style="color:var(--main-green)">0</span>
+            </div>
+            
+            <button class="btn-action btn-buy" onclick="checkoutWhatsApp()" style="height:60px; font-size:1.3rem;">تأكيد الطلب عبر واتساب 🚀</button>
         </div>
-    `).join('');
-}
+    </div>
 
-function searchProducts() {
-    const term = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = products.filter(p => p.n.toLowerCase().includes(term));
-    renderStore(filtered);
-}
+    <div id="adminSection" class="overlay">
+        <div class="popup-content" style="max-width:1000px;">
+            <span class="close-btn" onclick="togglePopup('adminSection')">✖ خروج آمن</span>
+            <h1 style="color:var(--main-green); text-align:center; border-bottom:1px solid #333; padding-bottom:10px;">MATRIX COMMAND CENTER</h1>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+                
+                <div class="admin-card">
+                    <h3 style="color:var(--main-green)">➕ إضافة منتج جديد</h3>
+                    <input type="file" id="fileInput" multiple accept="image/*">
+                    <input type="text" id="pName" placeholder="اسم المنتج/التجميعة">
+                    <textarea id="pDesc" placeholder="المواصفات الفنية كاملة..."></textarea>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="pEGP" placeholder="EGP">
+                        <input type="number" id="pUSD" placeholder="USD">
+                    </div>
+                    <select id="pStock">
+                        <option value="in">متوفر في المخزن</option>
+                        <option value="out">نفذت الكمية</option>
+                    </select>
+                    <button class="btn-action btn-cart" onclick="saveProduct()">نشر المنتج في المتجر</button>
+                </div>
 
-// 5. نظام السلة وتسجيل الطلبات (Analytics)
-function addToCart(id) {
-    const item = products.find(p => p.id === id);
-    if (item.stock === 'out') return alert("المنتج غير متوفر");
-    cart.push(item);
-    updateCartUI();
-}
+                <div class="admin-card">
+                    <h3 style="color:#0080ff">🤖 تدريب Matrix AI</h3>
+                    <p style="font-size:11px; color:gray;">علم البوت كيف يرد على الكلمات المفتاحية.</p>
+                    <button class="btn-action" style="background:#0080ff; color:white;" onclick="trainBot()">إضافة رد ذكي جديد</button>
+                    
+                    <h3 style="margin-top:25px; color:#ff3333;">🗑️ إدارة وحذف المحتوى</h3>
+                    <div id="adminProductsList" style="max-height:250px; overflow-y:auto; border:1px solid #222; padding:5px; border-radius:5px;">
+                        </div>
+                </div>
+            </div>
 
-function updateCartUI() {
-    document.getElementById('cartCount').innerText = cart.length;
-    const list = document.getElementById('cartItemsList');
-    let total = 0;
-    list.innerHTML = cart.map((p, i) => {
-        total += p.egp;
-        return `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #222;">
-            <span>${p.n}</span>
-            <span style="color:red; cursor:pointer" onclick="removeFromCart(${i})">حذف</span>
-        </div>`;
-    }).join('');
-    document.getElementById('cartTotal').innerText = total.toLocaleString() + " ج.م";
-}
-
-function removeFromCart(i) { cart.splice(i, 1); updateCartUI(); }
-
-function checkoutWhatsApp() {
-    if (cart.length === 0) return alert("السلة فارغة");
-    
-    // تسجيل الطلب في التحليلات
-    const order = {
-        id: Date.now(),
-        items: cart.map(p => p.n).join(', '),
-        total: cart.reduce((s, p) => s + p.egp, 0),
-        time: new Date().toLocaleString()
-    };
-    pendingOrders.push(order);
-    localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders));
-
-    // إرسال واتساب
-    let msg = `طلب جديد من Matrix:\n${order.items}\nالإجمالي: ${order.total} ج.م`;
-    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
-    
-    cart = []; updateCartUI();
-    renderOrdersLog();
-}
-
-// 6. لوحة الإدارة والتحليلات
-function renderOrdersLog() {
-    const log = document.getElementById('ordersLog');
-    log.innerHTML = pendingOrders.reverse().map(o => `
-        <div class="order-row" style="background:#000; margin-bottom:10px; padding:10px; border-right:3px solid #00ff41;">
-            <div style="color:#00ff41">📦 طلب رقم: ${o.id}</div>
-            <div style="font-size:12px;">الأصناف: ${o.items}</div>
-            <div style="font-size:12px;">الإجمالي: ${o.total} ج.م | الوقت: ${o.time}</div>
-            <button onclick="deleteOrder(${o.id})" style="background:red; color:white; border:none; cursor:pointer; font-size:10px; margin-top:5px;">حذف السجل</button>
+            <div class="admin-card" style="margin-top:25px;">
+                <h3 style="color:var(--order-gold)">📊 سجل الطلبات والتحليلات المعلقة</h3>
+                <div id="ordersLog"></div>
+            </div>
+            
+            <button onclick="formatSystem()" style="width:100%; margin-top:20px; background:none; border:1px solid #333; color:#444; cursor:pointer; padding:10px;">تصفير بيانات النظام بالكامل</button>
         </div>
-    `).join('');
-}
+    </div>
 
-function deleteOrder(id) {
-    pendingOrders = pendingOrders.filter(o => o.id !== id);
-    localStorage.setItem('matrix_orders', JSON.stringify(pendingOrders));
-    renderOrdersLog();
-}
+    <div id="chat-widget">
+        <div class="chat-header">Matrix AI Support</div>
+        <div id="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="اكتب 'open matrix' للإدارة...">
+            <button onclick="sendMessage()">ارسل</button>
+        </div>
+    </div>
 
-// 7. وظائف الأدمن والشات
-function saveProduct() {
-    const n = document.getElementById('pName').value;
-    const egp = document.getElementById('pEGP').value;
-    const file = document.getElementById('fileInput').files[0];
-
-    if (!n || !egp || !file) return alert("أكمل البيانات");
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        products.push({
-            id: Date.now(), n, egp: parseInt(egp), 
-            usd: document.getElementById('pUSD').value,
-            d: document.getElementById('pDesc').value,
-            img: e.target.result, stock: document.getElementById('pStock').value
-        });
-        localStorage.setItem('matrix_p', JSON.stringify(products));
-        location.reload();
-    };
-    reader.readAsDataURL(file);
-}
-
-function sendMessage() {
-    const input = document.getElementById('userInput');
-    let txt = input.value.trim().toLowerCase();
-    if (txt === "open matrix") {
-        if (prompt("Matrix Identity:") === ADMIN_PASS) {
-            togglePopup('adminSection');
-            renderOrdersLog();
-        }
-        input.value = '';
-    }
-}
-
-function togglePopup(id) {
-    const el = document.getElementById(id);
-    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-}
-
-// التشغيل الأولي
-window.onload = renderStore;
+    <script src="script.js"></script>
+</body>
+</html>
